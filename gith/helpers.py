@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from .console import GithConsole
@@ -375,7 +376,69 @@ class GithHelper:
         else:
             GithMessage(
                 f"Error setting local user email: {result.stderr}",
-                GithMessageLevel.ERROR
+                GithMessageLevel.ERROR,
             )
+
+    def checkout_dir(self, path: str, branch_name: str) -> None:
+        """
+        Checkout all git repo inside a directory to the same branch.
+        When branch not found in repo, skip with warning message.
+
+        Args:
+            path (str): Path to the directory containing the git repos.
+            branch_name (str): The branch to checkout in each repo.
+        """
+        base = Path(path).resolve()
+        subdirs = sorted(p for p in base.iterdir() if (p / ".git").is_dir())
+
+        if not subdirs:
+            GithMessage(f"No git repo found in {base}", GithMessageLevel.ERROR)
+
+        switched, skipped = 0, 0
+
+        for repo_path in subdirs:
+            name = repo_path.name
+
+            # git -C <path> runs git like we are in the repo directory
+            result = subprocess.run(
+                ["git", "-C", repo_path, "branch", "--list", branch_name],
+                capture_output=True,
+                text=True,
+            )
+            branch_exists_locally = branch_name in result.stdout
+
+            # FIXME : case of branch not found locally but exist in remote
+            # issue at https://github.com/rejamen/gith/issues/12
+            if not branch_exists_locally:
+                GithMessage(
+                    f"[yellow]{name}[/yellow]: branch [red]{branch_name}[/red] not found — skipped",
+                    GithMessageLevel.INFO,
+                )
+                skipped += 1
+                continue
+
+            result = subprocess.run(
+                ["git", "-C", repo_path, "checkout", branch_name],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                GithMessage(
+                    f"[yellow]{name}[/yellow]: switched to [green]{branch_name}[/green]",
+                    GithMessageLevel.LOG,
+                )
+                switched += 1
+            else:
+                GithMessage(
+                    f"[yellow]{name}[/yellow]: error — {result.stderr.strip()}",
+                    GithMessageLevel.INFO,
+                )
+                skipped += 1
+
+        GithMessage(
+            f"Done. [green]{switched} switched[/green], [red]{skipped} skipped[/red].",
+            GithMessageLevel.LOG,
+        )
+
 
 gith = GithHelper()

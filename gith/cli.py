@@ -1,12 +1,13 @@
 import configparser
 import os
+from pathlib import Path
+from typing import List, Optional
+
 import typer
 from rich.console import Console
-from typing import List
 
 from .helpers import gith
 from .messages import GithMessage, GithMessageLevel
-from pathlib import Path
 
 app = typer.Typer()
 console = Console()
@@ -106,8 +107,8 @@ def branch(
 
 @app.command()
 def checkout(
-    index: int = typer.Argument(
-        ...,
+    index: Optional[int] = typer.Argument(
+        None,
         help="Index of the branch to checkout to. Autocompletion available.",
         autocompletion=branch_name_autocomplete,
     ),
@@ -115,15 +116,36 @@ def checkout(
         True,
         help="Pull the latest changes from the remote repository after switching branches.",
     ),
+    dir: Optional[str] = typer.Option(
+        None,
+        "--dir",
+        help="Directory with multiple repositories to checkout to same branch.",
+    ),
+    branch: Optional[str] = typer.Option(
+        None,
+        "--b",
+        help="Branch name to checkout, used with --dir)",
+    ),
 ):
     """
     A helper command to checkout to a branch by its index.
     """
-    branches = gith.git_branch(verbose=False)
-    branch_to_checkout = branches[index - 1]
-    gith.checkout_to_branch(branch_to_checkout)
-    if pull:
-        gith.git_pull(branch_to_checkout)
+    if dir:
+        if not branch:
+            GithMessage("--b is required when using --dir.", GithMessageLevel.ERROR)
+        gith.checkout_dir(dir, branch)
+    else:
+        if not index:
+            # FIXME: case of branch not found locally but exist in remote
+            # issue at https://github.com/rejamen/gith/issues/12
+            GithMessage(
+                "Provide a branch index, or use --dir with --b", GithMessageLevel.ERROR
+            )
+        branches = gith.git_branch(verbose=False)
+        branch_to_checkout = branches[index - 1]
+        gith.checkout_to_branch(branch_to_checkout)
+        if pull:
+            gith.git_pull(branch_to_checkout)
 
 
 @app.command()

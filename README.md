@@ -220,6 +220,8 @@ Usage: gith checkout [OPTIONS] INDEX
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --pull    --no-pull      Pull the latest changes from the remote repository after switching branches. [default: pull]                  │
+│ --dir                    To specify if when you have many repo in the current directory to checkout to same branch                     │
+│ --b                      The branch you want to checkout all repo in directory. It's required if you use --dir                         │
 │ --help                   Show this message and exit.                                                                                   │
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
@@ -240,6 +242,12 @@ When you do checkout to a local branch that was not pushed yet to origin, you wi
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 > The motivation behind this command was to speed up the checkout process, ensuring automatic pull and branch handling by indexes.
+
+### Checkout many repo in a directory to same branch
+
+`gith checkout --dir=/path/to/dir -b branch_name`
+
+> Motivation : mainly used in Odoo where many modules are in same directory and these modules have branches' names that represent the Odoo version.
 
 ## gith repo ...
 

@@ -389,23 +389,37 @@ class GithHelper:
             branch_name (str): The branch to checkout in each repo.
         """
         base = Path(path).resolve()
+        if not base.exists():
+            GithMessage(
+                f"Directory not found: {path}",
+                GithMessageLevel.ERROR,
+            )
+        if not base.is_dir():
+            GithMessage(
+                f"Not a directory: {path}",
+                GithMessageLevel.ERROR,
+            )
         subdirs = sorted(p for p in base.iterdir() if (p / ".git").is_dir())
 
         if not subdirs:
-            GithMessage(f"No git repo found in {base}", GithMessageLevel.ERROR)
+            GithMessage(
+                f"No git repo found in {path} (resolved to {base})",
+                GithMessageLevel.ERROR,
+            )
 
         switched, skipped = 0, 0
 
         for repo_path in subdirs:
             name = repo_path.name
+            repo_str = str(repo_path)
 
             # git -C <path> runs git like we are in the repo directory
             result = subprocess.run(
-                ["git", "-C", repo_path, "branch", "--list", branch_name],
+                ["git", "-C", repo_str, "rev-parse", "--verify", f"refs/heads/{branch_name}"],
                 capture_output=True,
                 text=True,
             )
-            branch_exists_locally = branch_name in result.stdout
+            branch_exists_locally = result.returncode == 0
 
             # FIXME : case of branch not found locally but exist in remote
             # issue at https://github.com/rejamen/gith/issues/12
@@ -418,7 +432,7 @@ class GithHelper:
                 continue
 
             result = subprocess.run(
-                ["git", "-C", repo_path, "checkout", branch_name],
+                ["git", "-C", repo_str, "checkout", branch_name],
                 capture_output=True,
                 text=True,
             )
@@ -439,6 +453,5 @@ class GithHelper:
             f"Done. [green]{switched} switched[/green], [red]{skipped} skipped[/red].",
             GithMessageLevel.LOG,
         )
-
 
 gith = GithHelper()

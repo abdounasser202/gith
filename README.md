@@ -220,8 +220,8 @@ Usage: gith checkout [OPTIONS] INDEX
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --pull    --no-pull      Pull the latest changes from the remote repository after switching branches. [default: pull]                  │
-│ --dir                    To specify if when you have many repo in the current directory to checkout to same branch                     │
-│ --b                      The branch you want to checkout all repo in directory. It's required if you use --dir                         │
+│ --dir                    Directory containing multiple git repositories to checkout to the same branch.                                │
+│ --branch  -b             Branch name to checkout in each repository. Required when --dir is used.                                      │
 │ --help                   Show this message and exit.                                                                                   │
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
